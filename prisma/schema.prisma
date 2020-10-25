@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model organizations {
+  id                Int               @id @default(autoincrement())
+  organization_name String            @unique
+  survey_headers    survey_headers[]
+  survey_sections   survey_sections[]
+}
+
+model answers {
+  id                 Int               @id @default(autoincrement())
+  user_id            Int
+  question_option_id Int
+  answer_numeric     Int?
+  answer_text        String?
+  answer_yn          Int?
+  unit_of_measure_id Int?
+  question_options   question_options  @relation(fields: [question_option_id], references: [id])
+  unit_of_measures   unit_of_measures? @relation(fields: [unit_of_measure_id], references: [id])
+  users              users             @relation(fields: [user_id], references: [id])
+
+  @@index([question_option_id], name: "fk_answers_question_options1")
+  @@index([user_id], name: "fk_answers_surveyees1")
+  @@index([unit_of_measure_id], name: "fk_answers_unit_of_measure1")
+}
+
+model input_types {
+  id              Int         @id @default(autoincrement())
+  input_type_name String      @unique
+  questions       questions[]
+}
+
+model option_choices {
+  id                 Int                @id @default(autoincrement())
+  option_group_id    Int
+  option_choice_name String
+  option_groups      option_groups      @relation(fields: [option_group_id], references: [id])
+  question_options   question_options[]
+
+  @@index([option_group_id], name: "fk_option_type_choices_option_type_group1")
+}
+
+model option_groups {
+  id                Int              @id @default(autoincrement())
+  option_group_name String
+  option_choices    option_choices[]
+  questions         questions[]
+}
+
+model question_options {
+  id               Int            @id
+  question_id      Int
+  option_choice_id Int
+  option_choices   option_choices @relation(fields: [option_choice_id], references: [id])
+  questions        questions      @relation(fields: [question_id], references: [id])
+  answers          answers[]
+
+  @@index([option_choice_id], name: "fk_question_options_option_choices1")
+  @@index([question_id], name: "fk_question_options_questions1")
+}
+
+model questions {
+  id                              Int                @id @default(autoincrement())
+  parent_id                       Int?
+  survey_section_id               Int
+  input_type_id                   Int
+  question_name                   String
+  question_subtext                String?
+  question_required_yn            Int?
+  answer_required_yn              Int?               @default(1)
+  option_group_id                 Int?
+  allow_mutiple_option_answers_yn Int?               @unique @default(0)
+  dependent_question_id           Int?
+  dependent_question_option_id    Int?
+  dependent_answer_id             Int?
+  input_types                     input_types        @relation(fields: [input_type_id], references: [id])
+  option_groups                   option_groups?     @relation(fields: [option_group_id], references: [id])
+  survey_sections                 survey_sections    @relation(fields: [survey_section_id], references: [id])
+  question_options                question_options[]
+
+  @@index([option_group_id], name: "fk_questions_option_type_group1")
+  @@index([input_type_id], name: "fk_questions_question_types1")
+  @@index([survey_section_id], name: "fk_questions_survey_sections1")
+}
+
+model survey_comments {
+  id               Int            @id
+  survey_header_id Int
+  user_id          Int
+  comments         String?
+  survey_headers   survey_headers @relation(fields: [survey_header_id], references: [id])
+  users            users          @relation(fields: [user_id], references: [id])
+
+  @@index([survey_header_id], name: "fk_survey_comments_surveys1")
+  @@index([user_id], name: "fk_survey_comments_users1")
+}
+
+model survey_headers {
+  id                Int               @id @default(autoincrement())
+  organization_id   Int
+  survey_name       String?
+  instructions      String?
+  other_header_info String?
+  organizations     organizations     @relation(fields: [organization_id], references: [id])
+  survey_comments   survey_comments[]
+
+  @@index([organization_id], name: "fk_surveys_organizations1")
+}
+
+model survey_sections {
+  id                   Int                    @id @default(autoincrement())
+  survey_header_id     Int
+  section_name         String?                @unique
+  section_title        String?
+  section_subheading   String?
+  section_required_yn  Int                    @default(1)
+  organizations        organizations          @relation(fields: [survey_header_id], references: [id])
+  questions            questions[]
+  user_survey_sections user_survey_sections[]
+
+  @@index([survey_header_id], name: "fk_survey_sections_surveys1")
+}
+
+model unit_of_measures {
+  id                    Int       @id @default(autoincrement())
+  unit_of_measures_name String    @unique
+  answers               answers[]
+}
+
+model user_survey_sections {
+  id                Int             @id
+  user_id           Int
+  survey_section_id Int
+  completed_on      DateTime?
+  survey_sections   survey_sections @relation(fields: [survey_section_id], references: [id])
+  users             users           @relation(fields: [user_id], references: [id])
+
+  @@index([survey_section_id], name: "fk_user_survey_sections_survey_sections1")
+  @@index([user_id], name: "fk_user_survey_sections_users1")
+}
+
+model users {
+  id                   Int                    @id @default(autoincrement())
+  username             String
+  password_hashed      String?
+  email                String                 @unique
+  admin                Int?
+  invite_dt            DateTime?
+  last_login_dt        DateTime?
+  inviter_user_id      Int?
+  answers              answers[]
+  survey_comments      survey_comments[]
+  user_survey_sections user_survey_sections[]
+}

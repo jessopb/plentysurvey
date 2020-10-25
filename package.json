@@ -1,0 +1,20 @@
+{
+  "name": "survey",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^2.9.0",
+    "next": "^9.5.5",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "devDependencies": {
+    "@prisma/cli": "^2.9.0"
+  }
+}
